@@ -1,7 +1,7 @@
 #  HMC  regression 
 rm(list = ls())
 #  data generate process 
-n=1000
+n=2000
 p<-2
 epsilon<-rnorm(n,0,2)
 x<-matrix(runif(n*p),n)
@@ -11,9 +11,6 @@ y<- x %*% beta_dgp + epsilon
 
 a<-lm(y~x)
 summary(a)
-
-
-
 library(mvtnorm)
 
 
@@ -115,7 +112,7 @@ HMC = function (U, grad_U, epsilon, L, current_q,y,x){
 beta_init<-c(1,1,1)
 sigma_init<-1
 niter<-21000
-bi<-1000
+bi<-10000
 para<-matrix(NA,niter,4)
 para[1,]<-c(beta_init,sigma_init)
 acc_hmc<-0
@@ -123,12 +120,12 @@ acc_hmc<-0
 for (i in 2:niter) {
   if(i%%100==0){print(i)}
   old<- para[i-1,]
-  new=HMC(U = U_Posterior,grad_U = grad_u,epsilon = 0.001,L = 500,current_q = old,y,x)
+  new=HMC(U = U_Posterior,grad_U = grad_u,epsilon = 0.002,L = 50,current_q = old,y,x)
   if(new!=old && i>bi){acc_hmc=acc_hmc+1}
   para[i,]=new
 }
 
-result=para[10001:21000,]
+result=para[bi:niter,]
 apply(result,2,mean)
 acc_hmc
 hist(result[,1],100)
@@ -136,13 +133,12 @@ hist(result[,2],100)
 hist(result[,3],100)
 hist(result[,4],100)
 
-library(coda)
 library(cumstats)
 plot(1:length(cummean(result[,1])),cummean(result[,1]),type='l')  
 plot(1:length(cummean(result[,2])),cummean(result[,2]),type='l')   
 plot(1:length(cummean(result[,3])),cummean(result[,3]),type='l')   
 plot(1:length(cummean(result[,1])),cummean(result[,4]),type='l')   
-chain=mcmc(result)
+
 
 
 
