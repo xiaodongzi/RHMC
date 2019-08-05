@@ -2,7 +2,7 @@ rm(list=ls())
 
 U<-function(q){
   s= if(sign(q)==1) sign(q) else 0 
-  U<- -dnorm(q,0,3,log = TRUE)- dbinom(x=s,size = 1,prob = 0.8,log = TRUE)
+  U<- -dnorm(q,0,1,log = TRUE)- dbinom(x=s,size = 1,prob = 0.8,log = TRUE)
   return(U)
 }
 
@@ -23,7 +23,7 @@ FIRSTDISCONTINUITY<-function(q,p,t,U,epsilon){
     q_vector=c(q_vector,q_new)
     num=num+1
     if ((num<100)& (q_old * q_new<=0)){
-      print(c(q_vector,p))
+      #print(c(q_vector,p))
       break
     }
   }
