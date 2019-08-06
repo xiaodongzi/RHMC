@@ -18,7 +18,7 @@ grad_U<-function(q){
 }
 # traceback()
 
-res<- FIRSTDISCONTINUITY(c(0.0001235201,0.0001235),c(-1.6974357066,-1.697),0,U,0.025)
+# res<- FIRSTDISCONTINUITY(c(0.0001235201,0.0001235),c(-1.6974357066,-1.697),0,U,0.025)
 
 # FIRSTDISCONTINUITY(0.0001235,-1.697,0,U,0.025)
 # t=epsilon-t0
@@ -28,6 +28,7 @@ FIRSTDISCONTINUITY <- function(q,p,t,U,epsilon){
   result<-matrix(NA,length(q),4)
   current_q<- q
   for (i in 1:length(q)) {
+    temp_q<-current_q
     q<-current_q[i]
     q_vector = c(q)
     num=0
@@ -45,9 +46,13 @@ FIRSTDISCONTINUITY <- function(q,p,t,U,epsilon){
     q_left_1 = q_vector[length(q_vector)-1]# 为了计算方向
     q_right = q_vector[length(q_vector)]
     # print(q_vector)
-    U_left_2 = U(q_left_2)
-    U_left_1 = U(q_left_1)
-    U_right = U(q_right)
+    
+    temp_q[i] = q_left_2
+    U_left_2 = U(temp_q)
+    temp_q[i] = q_left_1
+    U_left_1 = U(temp_q)
+    temp_q[i] = q_right
+    U_right = U(temp_q)
     delta_U <- U_right - U_left_1
     tan_direction=(U_left_1 - U_left_2)/(epsilon/100)  # 方向的正切值
     if (num<100) {
@@ -144,7 +149,7 @@ RHMC<-function(U, grad_U, epsilon, L, current_q){
 
 x0<-c(1,1)
 bi<-10000
-n<-30000
+n<-20000
 acc_hmc<-0
 
 acc<-rep(0,n)
@@ -155,7 +160,7 @@ for (i in 2:n) {
   old<-x[i-1,]
   # print('old')
   # print(old)
-  new = RHMC(U = U,grad_U = grad_U,epsilon = 0.015,L=20,current_q = old)
+  new = RHMC(U = U,grad_U = grad_U,epsilon = runif(1,0.01,0.1),L=runif(1,15,20),current_q = old)
   # print(new)
   if(new!=old && i>bi) {acc_hmc=acc_hmc+1}
   if(new!=old ){acc[i-1]=1} 
@@ -185,7 +190,6 @@ plot(1:length(new_res[,1]),cummean(new_res[,1]),type='l')
 plot(1:length(new_res[,2]),cummean(new_res[,2]),type='l')
 tail(cummean(new_res[,1]))
 tail(cummean(new_res[,2]))
-
 
 
 
