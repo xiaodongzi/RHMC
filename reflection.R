@@ -2,28 +2,34 @@ rm(list=ls())
 
 U<-function(q){
   s= if(sign(q)==1) sign(q) else 0 
-  U<- -dnorm(q,0,1,log = TRUE)- dbinom(x=s,size = 1,prob = 0.8,log = TRUE)
+  U<- -dnorm(q,0,3,log = TRUE)- dbinom(x=s,size = 1,prob = 0.3,log = TRUE)
   return(U)
 }
+
 
 grad_U<-function(q){
   return(q)
 }
+
+
 # traceback()
 
-FIRSTDISCONTINUITY(0.0001235201,-1.6974357066,0,U,0.025)
+# FIRSTDISCONTINUITY(0.0001235201,-1.6974357066,0,U,0.025)
+# FIRSTDISCONTINUITY(1,-2,0,U,0.2)
+
 # t=epsilon-t0
 
-FIRSTDISCONTINUITY<-function(q,p,t,U,epsilon){
+FIRSTDISCONTINUITY<- function(q,p,t,U,epsilon){
   q_vector = c(q)
   num=0
-  for (x in rep(epsilon/100,100)) {
+  iter = 50
+  for (x in rep(epsilon/iter,iter)) {
     q_old = q_vector[length(q_vector)]
     q_new = q_old + p * x
     q_vector=c(q_vector,q_new)
     num=num+1
-    if ((num<100)& (q_old * q_new<=0)){
-      #print(c(q_vector,p))
+    if ((num<iter)& (q_old * q_new<=0)){
+      # print(c(q_vector,p))
       break
     }
   }
@@ -36,9 +42,9 @@ FIRSTDISCONTINUITY<-function(q,p,t,U,epsilon){
   U_left_1 = U(q_left_1)
   U_right = U(q_right)
   delta_U <- U_right - U_left_1
-  tan_direction=(U_left_1 - U_left_2)/(epsilon/100)  # 方向的正切值
-  if (num<100) {
-    return(list(q=q_left_1, t_x = num*epsilon/100, delta_U= delta_U, tan = tan_direction ))
+  tan_direction=(U_left_1 - U_left_2)/(epsilon/iter)  # 方向的正切值
+  if (num<iter) {
+    return(list(q=q_left_1, t_x = num*epsilon/iter, delta_U= delta_U, tan = tan_direction ))
   }else{
     return(0)    
   }
@@ -63,8 +69,9 @@ RHMC<-function(U, grad_U, epsilon, L, current_q){
     # print(i)
     p = p - epsilon * grad_U(q) / 2
     t0<-0
-
-    discounity <- FIRSTDISCONTINUITY(q,p,t0,U,epsilon)
+    discounity<-0
+    if (abs(q)<epsilon){
+    discounity <- FIRSTDISCONTINUITY(q,p,t0,U,epsilon)}
     # print(discounity)
     if (discounity!=0) {
       q = discounity$q
@@ -72,7 +79,7 @@ RHMC<-function(U, grad_U, epsilon, L, current_q){
       # print(q)
       t0 = discounity$t_x
       delta_U= discounity$delta_U
-
+      
       tan = discounity$tan  #  如果能量往下走，正切可能是负值
       p_parallel <- p* abs(tan/ sqrt(1+tan^2))  # 平行=p* sin
       # print('p_parallel')
@@ -90,11 +97,12 @@ RHMC<-function(U, grad_U, epsilon, L, current_q){
         # p_vetical = -p_vetical
         p = -p  # 反弹回去了
       }
-
+      
       # p = sqrt(p_vetical^2+p_parallel^2)
       
       q = q + (epsilon - t0) * p
-    }else{
+    }
+    else{
       q = q + epsilon  * p
     }
     
@@ -122,8 +130,8 @@ RHMC<-function(U, grad_U, epsilon, L, current_q){
 #  接下来开始仿真模拟 
 
 x0<- 1
-bi<-10000
-n<-30000
+bi<-1000
+n<-20000
 acc_hmc<-0
 
 acc<-rep(0,n)
@@ -133,7 +141,8 @@ for (i in 2:n) {
   old<-ifelse((i==1),x0,x[i-1])
   # print('old')
   # print(old)
-  new=RHMC(U = U,grad_U = grad_U,epsilon = 0.05,L=20,current_q = old)
+  
+  new=RHMC(U = U,grad_U = grad_U,epsilon = runif(1,0.1,0.9),L=runif(1,10,20),current_q = old)
   if(new!=old && i>bi) {acc_hmc=acc_hmc+1}
   if(new!=old){acc[i-1]=1} 
   x[i]=new
@@ -154,11 +163,15 @@ for (x in res){
   if (x<=0) {
     new_res=c(new_res,0)
   }else{
-  new_res=c(new_res,1)
+    new_res=c(new_res,1)
   }
 }
 plot(1:length(new_res),cummean(new_res),type='l')
 
 tail(cummean(new_res))
+
+mean(new_res)
+
+
 
 
